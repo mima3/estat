@@ -20,6 +20,11 @@ $(function() {
     };
     var map = new google.maps.Map(document.getElementById("map_canvas"), opts);
     var features = [];
+    map.data.addListener('click', function(e) {
+      alert(e.feature.getProperty('value'));
+      console.log(e.feature.getProperty('value'));
+    });
+
     google.maps.event.addListener(map, 'dragend', function() {
       var statid = $("input[name='estatid']:checked").val();
 
@@ -67,10 +72,6 @@ $(function() {
             }
           }
           map.data.setStyle(styleFeature(max));
-          map.data.addListener('click', function(e) {
-            alert(e.feature.getProperty('value'));	
-          });
-          
         },
         function() {
           $.blockUI({ message: '<img src="/estat/img/loading.gif" />' });
