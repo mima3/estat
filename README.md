@@ -4,6 +4,6 @@
 
 依存ファイル
 
-easy_install geohash
+easy_install python-geohash
 easy_install peewee
 
