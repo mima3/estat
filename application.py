@@ -16,7 +16,7 @@ app = Bottle()
 
 def setup(conf):
     global app
-    estat_db.connect(conf.get('database', 'path'), conf.get('database', 'mod_path'))
+    estat_db.connect(conf.get('database', 'path'), conf.get('database', 'mod_path'), conf.get('database', 'sep'))
 
 @app.get('/')
 def Home():
