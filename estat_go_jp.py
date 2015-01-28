@@ -8,8 +8,9 @@ from collections import defaultdict
 
 def trim_data(d):
     if d:
-       return d.strip()
+        return d.strip()
     return d
+
 
 def export_statical_data(writer, api_key, stats_data_id, class_object, start_position):
     """
@@ -34,21 +35,22 @@ def export_statical_data(writer, api_key, stats_data_id, class_object, start_pos
         for key in class_object:
             val = value_tag.get(key)
             if val in class_object[key]['objects']:
-                level = '';
+                level = ''
                 if 'level' in class_object[key]['objects'][val]:
                     if class_object[key]['objects'][val]['level'].isdigit():
                         level = ' ' * (int(class_object[key]['objects'][val]['level']) - 1)
-                text = ("%s%s" % (level , class_object[key]['objects'][val]['name']))
+                text = ("%s%s" % (level, class_object[key]['objects'][val]['name']))
                 row.append(text.encode('utf-8'))
             else:
                 row.append(val.encode('utf-8'))
         row.append(value_tag.text)
         writer.writerow(row)
-    
+
     next_tags = root.xpath('//STATISTICAL_DATA/TABLE_INF/NEXT_KEY')
     if next_tags:
         if next_tags[0].text:
             export_statical_data(writer, api_key, stats_data_id, class_object, int(next_tags[0].text))
+
 
 def get_table_inf(api_key, stats_data_id):
     """
@@ -65,7 +67,7 @@ def get_table_inf(api_key, stats_data_id):
     # TABLE_INF取得
     table_inf = root.xpath('//METADATA_INF/TABLE_INF')[0]
     item = {
-         'id': trim_data(table_inf.get('id'))
+        'id': trim_data(table_inf.get('id'))
     }
     stat_name = table_inf.find('STAT_NAME')
     if stat_name is not None:
@@ -122,27 +124,28 @@ def get_meta_data(api_key, stats_data_id):
         class_object_id = class_object_tag.get('id')
         class_object_name = class_object_tag.get('name')
         class_object_item = {
-            'id' : trim_data(class_object_id),
-            'name' : trim_data(class_object_name),
-            'objects' : {}
+            'id': trim_data(class_object_id),
+            'name': trim_data(class_object_name),
+            'objects': {}
         }
         class_tags = class_object_tag.xpath('.//CLASS')
         for class_tag in class_tags:
             class_item = {
-                'code' : trim_data(class_tag.get('code')),
-                'name' : trim_data(class_tag.get('name')),
-                'level' : trim_data(class_tag.get('level')),
-                'unit' : trim_data(class_tag.get('unit'))
+                'code': trim_data(class_tag.get('code')),
+                'name': trim_data(class_tag.get('name')),
+                'level': trim_data(class_tag.get('level')),
+                'unit': trim_data(class_tag.get('unit'))
             }
             class_object_item['objects'][class_item['code']] = class_item
         class_object[class_object_id] = class_object_item
     return class_object
 
+
 def export_csv(api_key, stats_data_id, output_path):
     """
     指定の統計情報をCSVにエクスポートする.
     """
-    writer = csv.writer(open(output_path, 'wb'),quoting=csv.QUOTE_ALL)
+    writer = csv.writer(open(output_path, 'wb'), quoting=csv.QUOTE_ALL)
 
     class_object = get_meta_data(api_key, stats_data_id)
     row = []
@@ -153,6 +156,7 @@ def export_csv(api_key, stats_data_id, output_path):
     writer.writerow(row)
 
     export_statical_data(writer, api_key, stats_data_id, class_object, 1)
+
 
 def get_stats_list(api_key, search_kind, key_word):
     """
@@ -174,7 +178,7 @@ def get_stats_list(api_key, search_kind, key_word):
     list_infs = data_list.xpath('.//LIST_INF')
     for list_inf in list_infs:
         item = {
-             'id': trim_data(list_inf.get('id'))
+            'id': trim_data(list_inf.get('id'))
         }
         stat_name = list_inf.find('STAT_NAME')
         if stat_name is not None:
@@ -243,6 +247,7 @@ def _get_stats_id_value(api_key, stats_data_id, class_object, start_position, fi
         row['value'] = trim_data(value_tag.text)
         ret.append(row)
     return ret
+
 
 def get_stats_id_value(api_key, stats_data_id, filter):
     """

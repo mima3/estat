@@ -46,3 +46,4 @@ Temporary Items
 *.pyc
 /application.ini
 /index.cgi
+/dbtest.py

@@ -10,6 +10,7 @@ database_proxy = Proxy()  # Create a proxy for our db.
 
 SRID = 4326
 
+
 class PolygonField(Field):
     db_field = 'polygon'
 
@@ -35,6 +36,9 @@ class MultiLineStringField(Field):
 
 
 class Stat(Model):
+    """
+    統計情報を格納するモデル
+    """
     stat_id = TextField(primary_key=True)
     stat_name = TextField()
     stat_name_code = TextField()
@@ -46,10 +50,15 @@ class Stat(Model):
     #open_date = TextField()
     #small_area = TextField()
     title = TextField()
+
     class Meta:
         database = database_proxy
 
+
 class StatValue(Model):
+    """
+    統計の値を格納するモデル
+    """
     id = PrimaryKeyField()
     stat_id = TextField(index=True, unique=False)
     value = TextField()
@@ -57,7 +66,11 @@ class StatValue(Model):
     class Meta:
         database = database_proxy
 
+
 class StatValueAttr(Model):
+    """
+    統計の属性値を格納するモデル
+    """
     id = PrimaryKeyField()
     stat_id = TextField()
     stat_value = ForeignKeyField(
@@ -71,12 +84,15 @@ class StatValueAttr(Model):
     class Meta:
         database = database_proxy
         indexes = (
-                    (('stat_id', 'stat_value'), False),
-                    (('stat_id', 'stat_value', 'attr_name'), False),
-                )
+            (('stat_id', 'stat_value'), False),
+            (('stat_id', 'stat_value', 'attr_name'), False),
+        )
 
 
 class MapArea(Model):
+    """
+    統計の属性値 areaにおけるPolygonを格納するモデル
+    """
     id = PrimaryKeyField()
     stat_id = TextField()
     stat_val_attr = ForeignKeyField(
@@ -89,8 +105,9 @@ class MapArea(Model):
     class Meta:
         database = database_proxy
         indexes = (
-                    (('stat_id', 'stat_val_attr'), True),
-                )
+            (('stat_id', 'stat_val_attr'), True),
+        )
+
 
 class idx_MapArea_Geometry(Model):
     pkid = PrimaryKeyField()
@@ -98,25 +115,39 @@ class idx_MapArea_Geometry(Model):
     xmax = FloatField()
     ymin = FloatField()
     ymax = FloatField()
+
     class Meta:
         database = database_proxy
 
 
 def connect(path, spatialite_path, evn_sep=';'):
+    """
+    データベースへの接続
+    @param path sqliteのパス
+    @param spatialite_path mod_spatialiteへのパス
+    @param env_sep 環境変数PATHの接続文字 WINDOWSは; LINUXは:
+    """
     os.environ["PATH"] = os.environ["PATH"] + evn_sep + os.path.dirname(spatialite_path)
     db = SqliteExtDatabase(path)
     database_proxy.initialize(db)
     db.field_overrides = {
-      'polygon': 'POLYGON',
-      'point': 'POINT',
-      'linestring': 'LINESTRING',
-      'multipolygon': 'MULTIPOLYGON',
-      'multipoint': 'MULTIPOINT',
-      'multilinestring': 'MULTILINESTRING',
+        'polygon': 'POLYGON',
+        'point': 'POINT',
+        'linestring': 'LINESTRING',
+        'multipolygon': 'MULTIPOLYGON',
+        'multipoint': 'MULTIPOINT',
+        'multilinestring': 'MULTILINESTRING',
     }
     db.load_extension(os.path.basename(spatialite_path))
 
+
 def setup(path, spatialite_path, evn_sep=';'):
+    """
+    データベースの作成
+    @param path sqliteのパス
+    @param spatialite_path mod_spatialiteへのパス
+    @param env_sep 環境変数PATHの接続文字 WINDOWSは; LINUXは:
+    """
     connect(path, spatialite_path, evn_sep)
 
     database_proxy.create_tables([Stat, StatValue, StatValueAttr], True)
@@ -149,11 +180,16 @@ def setup(path, spatialite_path, evn_sep=';'):
 
 
 def import_stat(api_key, stat_id):
+    """
+    統計情報のインポート
+    @param api_key e-statのAPIKEY
+    @param stat_id 統計ID
+    """
     with database_proxy.transaction():
-        MapArea.delete().filter(MapArea.stat_id==stat_id).execute()
-        StatValueAttr.delete().filter(StatValueAttr.stat_id==stat_id).execute()
-        StatValue.delete().filter(StatValue.stat_id==stat_id).execute()
-        Stat.delete().filter(Stat.stat_id==stat_id).execute()
+        MapArea.delete().filter(MapArea.stat_id == stat_id).execute()
+        StatValueAttr.delete().filter(StatValueAttr.stat_id == stat_id).execute()
+        StatValue.delete().filter(StatValue.stat_id == stat_id).execute()
+        Stat.delete().filter(Stat.stat_id == stat_id).execute()
 
         tableinf = get_table_inf(api_key, stat_id)
         stat_row = Stat.create(
@@ -170,44 +206,53 @@ def import_stat(api_key, stat_id):
             if not 'value' in vdata:
                 continue
             value_row = StatValue.create(
-                stat_id = stat_id,
-                value = vdata['value']
+                stat_id=stat_id,
+                value=vdata['value']
             )
             for k, v in vdata.items():
                 stat_val_attr = StatValueAttr.create(
-                    stat_id = stat_id,
-                    stat_value = value_row,
-                    attr_name = k,
-                    attr_value = v
+                    stat_id=stat_id,
+                    stat_value=value_row,
+                    attr_name=k,
+                    attr_value=v
                 )
                 if k == 'area':
                     # メッシュコード
                     meshbox = jpgrid.bbox(v)
                     database_proxy.get_conn().execute(
-                        'INSERT INTO MapArea(stat_id, stat_val_attr_id, geometry) VALUES(?,?,BuildMBR(?,?,?,?,?))', 
+                        'INSERT INTO MapArea(stat_id, stat_val_attr_id, geometry) VALUES(?,?,BuildMBR(?,?,?,?,?))',
                         (stat_id, stat_val_attr.id, meshbox['s'], meshbox['e'], meshbox['n'], meshbox['w'], SRID)
                     )
         database_proxy.commit()
 
 
 def get_mesh_stat(stat_id_start_str, attr_value, xmin, ymin, xmax, ymax):
+    """
+    地域メッシュの統計情報を取得する
+    @param stat_id_start_str 統計IDの開始文字 この文字から始まるIDをすべて取得する.
+    @param attr_value cat01において絞り込む値
+    @param xmin 取得範囲
+    @param ymin 取得範囲
+    @param xmax 取得範囲
+    @param ymax 取得範囲
+    """
     rows = database_proxy.get_conn().execute("""
-        SELECT 
+        SELECT
           statValue.value,
           AsGeoJson(MapArea.Geometry)
-        FROM 
-          MapArea 
+        FROM
+          MapArea
           inner join idx_MapArea_Geometry ON pkid = MapArea.id AND xmin > ? AND ymin > ? AND xmax < ? AND ymax < ?
-          inner join statValueAttr ON MapArea.stat_val_attr_id = statValueAttr.id 
+          inner join statValueAttr ON MapArea.stat_val_attr_id = statValueAttr.id
           inner join statValueAttr AS b ON b.stat_value_id = statValueAttr.stat_value_id AND b.attr_value = ?
           inner join statValue ON statValue.id = b.stat_value_id
-        WHERE 
+        WHERE
           MapArea.stat_id like ?;
-    """,(xmin, ymin, xmax, ymax, attr_value, stat_id_start_str + '%'))
-    ret  = []
+    """, (xmin, ymin, xmax, ymax, attr_value, stat_id_start_str + '%'))
+    ret = []
     for r in rows:
         ret.append({
-            'value' : r[0],
-            'geometory' : r[1]
+            'value': r[0],
+            'geometory': r[1]
         })
     return ret

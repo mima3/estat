@@ -18,6 +18,7 @@ def setup(conf):
     global app
     estat_db.connect(conf.get('database', 'path'), conf.get('database', 'mod_path'), conf.get('database', 'sep'))
 
+
 @app.get('/')
 def Home():
     return 'Estat page...'
@@ -25,7 +26,7 @@ def Home():
 
 @app.get('/population')
 def populationPage():
-    return template('population').replace('\n', '');
+    return template('population').replace('\n', '')
 
 
 @app.get('/json/get_population')
@@ -38,12 +39,12 @@ def getPopulation():
     attrval = request.query.attr_value
 
     ret = estat_db.get_mesh_stat(stat_id, attrval, swlng, swlat, nelng, nelat)
-    res = {'type' : 'FeatureCollection', 'features': []}
+    res = {'type': 'FeatureCollection', 'features': []}
     for r in ret:
         item = {
-          'type' : 'Feature',
-          'geometry':json.loads(r['geometory']),
-          'properties': { "value": r['value']}
+            'type': 'Feature',
+            'geometry': json.loads(r['geometory']),
+            'properties': {'value': r['value']}
         }
         res['features'].append(item)
     response.content_type = 'application/json;charset=utf-8'
