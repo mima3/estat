@@ -2,13 +2,8 @@
 ==========
 このプログラムは政府統計総合窓口の提供する地域メッシュをDBに格納してHTTP経由で結果を返すプログラムです。  
 
-<<<<<<< HEAD
 政府統計総合窓口:http://www.e-stat.go.jp/api/  
 demo:http://needtec.sakura.ne.jp/estat/population  
-=======
-政府統計総合窓口:http://www.e-stat.go.jp/api/
-demo:http://needtec.sakura.ne.jp/estat/population
->>>>>>> d654b494a44d33f714fdfbc3cc065150eca2a5ff
 
 依存ファイル
 -------------
