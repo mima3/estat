@@ -16,7 +16,7 @@ def export_statical_data(writer, api_key, stats_data_id, class_object, start_pos
     """
     統計情報のエクスポート
     """
-    url = ('http://api.e-stat.go.jp/rest/1.0/app/getStatsData?limit=10000&appId=%s&lang=J&statsDataId=%s&metaGetFlg=N&cntGetFlg=N' % (api_key, stats_data_id))
+    url = ('http://api.e-stat.go.jp/rest/1.0/app/getStatsData?limit=100000&appId=%s&lang=J&statsDataId=%s&metaGetFlg=N&cntGetFlg=N' % (api_key, stats_data_id))
     if start_position > 0:
         url = url + ('&startPosition=%d' % start_position)
 
@@ -222,7 +222,7 @@ def _get_stats_id_value(api_key, stats_data_id, class_object, start_position, fi
     """
     統計情報の取得
     """
-    url = ('http://api.e-stat.go.jp/rest/1.0/app/getStatsData?limit=10000&appId=%s&lang=J&statsDataId=%s&metaGetFlg=N&cntGetFlg=N%s' % (api_key, stats_data_id, filter_str))
+    url = ('http://api.e-stat.go.jp/rest/1.0/app/getStatsData?limit=100000&appId=%s&lang=J&statsDataId=%s&metaGetFlg=N&cntGetFlg=N%s' % (api_key, stats_data_id, filter_str))
     if start_position > 0:
         url = url + ('&startPosition=%d' % start_position)
     req = urllib2.Request(url)

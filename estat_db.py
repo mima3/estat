@@ -256,3 +256,49 @@ def get_mesh_stat(stat_id_start_str, attr_value, xmin, ymin, xmax, ymax):
             'geometory': r[1]
         })
     return ret
+
+
+def get_mesh_stat_group_by_mesh(stat_id_start_str, xmin, ymin, xmax, ymax):
+    """
+    地域メッシュの統計情報を取得する。この際、地域メッシュでグループ化する
+    @param stat_id_start_str 統計IDの開始文字 この文字から始まるIDをすべて取得する.
+    @param xmin 取得範囲
+    @param ymin 取得範囲
+    @param xmax 取得範囲
+    @param ymax 取得範囲
+    """
+    rows = database_proxy.get_conn().execute("""
+        SELECT
+          statValue.value,
+          AsGeoJson(MapArea.Geometry) AS geo,
+          area.attr_value as area_code,
+          c.attr_name,
+          c.attr_value
+        FROM
+          MapArea
+          inner join idx_MapArea_Geometry ON pkid = MapArea.id AND xmin > ? AND ymin > ? AND xmax < ? AND ymax < ?
+          inner join statValueAttr as area ON MapArea.stat_val_attr_id = area.id and area.attr_name = 'area'
+          inner join statValue ON statValue.id = area.stat_value_id
+          left outer join statValueAttr AS c ON c.stat_value_id = statValue.id and c.attr_name <> 'area'
+        WHERE
+          MapArea.stat_id like ?
+        ORDER BY area_code;
+    """, (xmin, ymin, xmax, ymax, stat_id_start_str + '%'))
+    ret = []
+    tmp = None
+    preGeo = ''
+    for r in rows:
+        if preGeo != r[1]:
+            if not tmp is None:
+                ret.append(tmp)
+            preGeo = r[1]
+            tmp = {}
+            tmp['geometory'] = r[1]
+            tmp['area'] = r[2]
+        if r[3] == 'value':
+            continue
+        tmp[r[4]] = r[0]
+
+    if not tmp is None:
+        ret.append(tmp)
+    return ret
