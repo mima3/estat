@@ -48,6 +48,7 @@ def getPopulation():
         }
         res['features'].append(item)
     response.content_type = 'application/json;charset=utf-8'
+    response.set_header('Access-Control-Allow-Origin', '*')
     return json.dumps(res)
 
 
@@ -73,4 +74,5 @@ def getPopulationGroupByMesh():
             item['properties'][k] = i
         res['features'].append(item)
     response.content_type = 'application/json;charset=utf-8'
+    response.set_header('Access-Control-Allow-Origin', '*')
     return json.dumps(res)
